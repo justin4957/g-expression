@@ -81,11 +81,16 @@ defmodule Gexpr.CLI do
   defp handle_show([name | options]) do
     case load_seed(name) do
       {:ok, seed} ->
-        if Enum.member?(options, "--visual") do
-          Gexpr.Visualizer.show_visual(seed, name, %{format: :web})
-        else
-          format = parse_show_format(options)
-          display_seed(seed, format, name)
+        cond do
+          Enum.member?(options, "--visual") ->
+            Gexpr.Visualizer.show_visual(seed, name, %{format: :web})
+          
+          Enum.member?(options, "--tree") ->
+            display_tree_json(seed, name, options)
+            
+          true ->
+            format = parse_show_format(options)
+            display_seed(seed, format, name)
         end
 
       {:error, reason} ->
@@ -94,9 +99,11 @@ defmodule Gexpr.CLI do
   end
 
   defp handle_show(_) do
-    IO.puts("Usage: gx show <name> [--as format] [--history]")
+    IO.puts("Usage: gx show <name> [--as format] [--visual] [--tree] [--history]")
     IO.puts("Example: gx show fib")
     IO.puts("         gx show fib --as json")
+    IO.puts("         gx show fib --visual")
+    IO.puts("         gx show fib --tree")
   end
 
   defp handle_peek([name | options]) do
@@ -241,17 +248,24 @@ defmodule Gexpr.CLI do
   end
 
   defp display_seed(seed, :pretty, name) do
-    IO.puts("#{name}:")
-    IO.puts("  Generator: #{seed.generator}")
-    IO.puts("  State: #{inspect(seed.expansion_state)}")
-    IO.puts("  Value: #{inspect(seed.value)}")
+    case seed.generator do
+      :lsystem -> 
+        Gexpr.Visualizer.render_lsystem_ascii(seed, name)
+      :lazy ->
+        Gexpr.Visualizer.render_sequence_ascii(seed, name)
+      _ ->
+        IO.puts("#{name}:")
+        IO.puts("  Generator: #{seed.generator}")
+        IO.puts("  State: #{inspect(seed.expansion_state)}")
+        IO.puts("  Value: #{inspect(seed.value)}")
 
-    unless Enum.empty?(seed.expansion_state.history) do
-      IO.puts("  History:")
+        unless Enum.empty?(seed.expansion_state.history) do
+          IO.puts("  History:")
 
-      Enum.each(seed.expansion_state.history, fn step ->
-        IO.puts("    #{step.rule}: #{inspect(step.from)} → #{inspect(step.to)}")
-      end)
+          Enum.each(seed.expansion_state.history, fn step ->
+            IO.puts("    #{step.rule}: #{inspect(step.from)} → #{inspect(step.to)}")
+          end)
+        end
     end
   end
 
@@ -264,6 +278,33 @@ defmodule Gexpr.CLI do
     }
 
     IO.puts(inspect(structure, pretty: true))
+  end
+
+  defp display_tree_json(seed, name, options) do
+    tree_data = build_expansion_tree(seed, name)
+    
+    # Check if we should include metadata
+    include_meta = Enum.member?(options, "--meta")
+    
+    # Check if we should include transformation steps
+    include_steps = Enum.member?(options, "--steps")
+    
+    # Build the final tree structure
+    final_tree = %{
+      name: name,
+      root: tree_data,
+      metadata: if(include_meta, do: extract_metadata(seed), else: nil),
+      transformation_steps: if(include_steps, do: extract_transformation_steps(seed), else: nil),
+      generated_at: DateTime.utc_now() |> DateTime.to_iso8601(),
+      cli_version: "0.1.0"
+    }
+    |> Enum.filter(fn {_k, v} -> v != nil end)
+    |> Enum.into(%{})
+    
+    case Jason.encode(final_tree, pretty: true) do
+      {:ok, json} -> IO.puts(json)
+      {:error, reason} -> IO.puts("❌ JSON encoding failed: #{reason}")
+    end
   end
 
   defp peek_at_seed(seed, depth, name) do
@@ -398,6 +439,142 @@ defmodule Gexpr.CLI do
     IO.puts("Type 'help' for available commands")
     env
   end
+
+  # Tree building functions
+  defp build_expansion_tree(seed, name) do
+    %{
+      node_type: "seed",
+      name: name,
+      generator: seed.generator,
+      current_value: serialize_value(seed.value),
+      expansion_state: %{
+        depth: seed.expansion_state.depth,
+        iterations: seed.expansion_state.iterations,
+        finalized: Map.get(seed.expansion_state, :finalized, false)
+      },
+      children: build_history_nodes(seed.expansion_state.history)
+    }
+  end
+
+  defp build_history_nodes(history) do
+    history
+    |> Enum.reverse() # Show chronological order
+    |> Enum.with_index()
+    |> Enum.map(fn {step, index} ->
+      %{
+        node_type: "transformation",
+        step_number: index + 1,
+        rule: step.rule,
+        timestamp: step.timestamp,
+        from_value: serialize_value(step.from),
+        to_value: serialize_value(step.to),
+        children: [] # Transformations are leaf nodes
+      }
+    end)
+  end
+
+  defp serialize_value(value) when is_map(value) do
+    # For L-systems and other complex values, create a structured representation
+    case value do
+      %{axiom: axiom, rules: rules} ->
+        %{
+          type: "lsystem",
+          axiom: axiom,
+          rules: rules,
+          axiom_length: String.length(axiom)
+        }
+      
+      %{state: state, rule: rule} ->
+        %{
+          type: "lazy_sequence",
+          rule: rule,
+          current_state: state,
+          last_value: List.last(state)
+        }
+      
+      %{strategy: strategy, hint: hint} ->
+        %{
+          type: "adaptive_algorithm",
+          strategy: strategy,
+          hint: hint
+        }
+      
+      _ ->
+        %{
+          type: "generic",
+          raw_value: inspect(value, limit: 10)
+        }
+    end
+  end
+
+  defp serialize_value(value), do: %{type: "literal", value: value}
+
+  defp extract_metadata(seed) do
+    %{
+      generator_type: seed.generator,
+      total_transformations: length(seed.expansion_state.history),
+      creation_timestamp: extract_creation_time(seed.expansion_state.history),
+      constraints: seed.expansion_state.constraints,
+      resources_used: seed.expansion_state.resources_used,
+      seed_metadata: seed.meta
+    }
+  end
+
+  defp extract_transformation_steps(seed) do
+    seed.expansion_state.history
+    |> Enum.reverse()
+    |> Enum.with_index()
+    |> Enum.map(fn {step, index} ->
+      %{
+        step: index + 1,
+        rule_applied: step.rule,
+        timestamp: step.timestamp,
+        datetime: DateTime.from_unix!(step.timestamp, :millisecond) |> DateTime.to_iso8601(),
+        transformation_type: classify_transformation(step),
+        complexity_change: calculate_complexity_change(step.from, step.to)
+      }
+    end)
+  end
+
+  defp extract_creation_time([]), do: nil
+  defp extract_creation_time(history) do
+    history
+    |> List.last()
+    |> Map.get(:timestamp)
+    |> case do
+      nil -> nil
+      ts -> DateTime.from_unix!(ts, :millisecond) |> DateTime.to_iso8601()
+    end
+  end
+
+  defp classify_transformation(%{rule: "lsystem"}), do: "structural_growth"
+  defp classify_transformation(%{rule: "fibonacci"}), do: "sequence_generation"
+  defp classify_transformation(%{rule: "lazy"}), do: "sequence_generation"
+  defp classify_transformation(%{rule: "adaptive"}), do: "strategy_selection"
+  defp classify_transformation(%{rule: "genetic"}), do: "evolutionary_selection"
+  defp classify_transformation(%{rule: "spec"}), do: "synthesis"
+  defp classify_transformation(_), do: "generic_transformation"
+
+  defp calculate_complexity_change(from, to) do
+    from_size = estimate_complexity(from)
+    to_size = estimate_complexity(to)
+    %{
+      from: from_size,
+      to: to_size,
+      change: to_size - from_size,
+      growth_factor: if(from_size > 0, do: to_size / from_size, else: nil)
+    }
+  end
+
+  defp estimate_complexity(value) when is_binary(value), do: String.length(value)
+  defp estimate_complexity(value) when is_list(value), do: length(value)
+  defp estimate_complexity(value) when is_map(value) do
+    case value do
+      %{axiom: axiom} -> String.length(axiom)
+      _ -> map_size(value)
+    end
+  end
+  defp estimate_complexity(_), do: 1
 
   # Storage functions
   defp store_seed(name, seed) do
@@ -571,10 +748,19 @@ defmodule Gexpr.CLI do
       lsystem   - L-system recursive structures
       spec      - Specifications that synthesize to code
 
+    Show options:
+      --as json         - Output as JSON
+      --visual          - Open interactive browser visualization
+      --tree            - Output expansion tree as JSON
+      --tree --meta     - Include detailed metadata
+      --tree --steps    - Include transformation analysis
+
     Examples:
       gx plant fib lazy
       gx grow fib -n 5
       gx show fib --as json
+      gx show fib --tree
+      gx show fib --tree --meta --steps
       gx peek fib --depth 2
     """)
   end
@@ -592,13 +778,19 @@ defmodule Gexpr.CLI do
       help                            - Show this help
       exit                            - Exit REPL
       
-    Visual Options:
-      grow <name> --visual            - Real-time ASCII growth animation
+    Show Options:
       show <name> --visual            - Open browser visualization
+      show <name> --tree              - JSON expansion tree
+      show <name> --tree --meta       - Tree with metadata
+      show <name> --tree --steps      - Tree with transformation analysis
+      
+    Growth Options:  
+      grow <name> --visual            - Real-time ASCII growth animation
       
     Example Showcase Demo:
       plant fractal fractal
       grow fractal --visual -n 6
+      show fractal --tree --meta
     """)
   end
 end

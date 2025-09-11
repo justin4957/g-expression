@@ -239,7 +239,7 @@ defmodule Gexpr.Visualizer do
   end
 
   # L-System ASCII rendering
-  defp render_lsystem_ascii(%{value: %{axiom: axiom}} = seed, name) do
+  def render_lsystem_ascii(%{value: %{axiom: axiom}} = seed, name) do
     IO.puts("🌳 #{name} (L-System Tree)")
     IO.puts("Axiom: #{axiom}")
     IO.puts("")
@@ -254,60 +254,93 @@ defmodule Gexpr.Visualizer do
   end
 
   defp axiom_to_ascii_tree(axiom) do
-    # Parse L-system symbols into tree structure
-    {lines, _, _} = draw_branch(axiom, 0, 0, 0, [])
+    # Center starting position
+    center_x = 40
+    start_y = 25
+    
+    # Parse L-system symbols into tree structure  
+    {lines, _, _} = draw_branch(axiom, center_x, start_y, 0, [])
     
     # Convert to string lines
     max_width = 80
     max_height = 30
     
-    grid = for _ <- 1..max_height, do: String.duplicate(" ", max_width) |> String.graphemes()
+    # Initialize grid with spaces
+    grid = for _ <- 1..max_height, do: for(_ <- 1..max_width, do: " ")
     
+    # Place characters on grid
     final_grid = Enum.reduce(lines, grid, fn {x, y, char}, acc ->
-      if x >= 0 and x < max_width and y >= 0 and y < max_height do
-        List.update_at(acc, y, fn row ->
-          List.replace_at(row, x, char)
-        end)
-      else
-        acc
-      end
+      safe_x = max(0, min(x, max_width - 1))
+      safe_y = max(0, min(y, max_height - 1))
+      
+      List.update_at(acc, safe_y, fn row ->
+        List.replace_at(row, safe_x, char)
+      end)
     end)
     
+    # Convert to strings and clean up
     final_grid
     |> Enum.map(&Enum.join/1)
     |> Enum.map(&String.trim_trailing/1)
+    |> Enum.drop_while(&(&1 == ""))
+    |> Enum.reverse()
+    |> Enum.drop_while(&(&1 == ""))
+    |> Enum.reverse()
   end
 
-  # Recursive L-system tree drawer
+  # Recursive L-system tree drawer with better graphics
   defp draw_branch("", x, y, _angle, lines), do: {lines, x, y}
   
   defp draw_branch("A" <> rest, x, y, angle, lines) do
-    # A = main branch, draw upward
-    new_y = y - 2
-    new_lines = [{x, y, "|"}, {x, y + 1, "|"} | lines]
+    # A = main trunk, draw upward with multiple segments
+    new_y = y - 3
+    new_lines = [
+      {x, y, "│"},
+      {x, y - 1, "│"},
+      {x, y - 2, "│"}
+      | lines
+    ]
     draw_branch(rest, x, new_y, angle, new_lines)
   end
   
   defp draw_branch("B" <> rest, x, y, angle, lines) do
-    # B = thicker branch
-    new_y = y - 1
-    new_lines = [{x, y, "║"} | lines]
+    # B = branch segment
+    new_y = y - 2
+    new_lines = [
+      {x, y, "│"},
+      {x, y - 1, "│"}
+      | lines
+    ]
     draw_branch(rest, x, new_y, angle, new_lines)
   end
   
   defp draw_branch("[+" <> rest, x, y, angle, lines) do
     # Start right branch
     {branch_rest, remaining} = extract_branch(rest)
-    {branch_lines, _, _} = draw_branch(branch_rest, x + 2, y - 1, angle + 30, lines)
-    new_lines = [{x + 1, y, "/"} | branch_lines]
+    
+    # Draw the connection and branch
+    connector_lines = [
+      {x, y, "├"},
+      {x + 1, y - 1, "╱"}
+    ]
+    
+    {branch_lines, _, _} = draw_branch(branch_rest, x + 2, y - 2, angle + 45, lines)
+    new_lines = connector_lines ++ branch_lines
     draw_branch(remaining, x, y, angle, new_lines)
   end
   
   defp draw_branch("[-" <> rest, x, y, angle, lines) do
-    # Start left branch  
+    # Start left branch
     {branch_rest, remaining} = extract_branch(rest)
-    {branch_lines, _, _} = draw_branch(branch_rest, x - 2, y - 1, angle - 30, lines)
-    new_lines = [{x - 1, y, "\\"} | branch_lines]
+    
+    # Draw the connection and branch
+    connector_lines = [
+      {x, y, "├"},
+      {x - 1, y - 1, "╲"}
+    ]
+    
+    {branch_lines, _, _} = draw_branch(branch_rest, x - 2, y - 2, angle - 45, lines)
+    new_lines = connector_lines ++ branch_lines
     draw_branch(remaining, x, y, angle, new_lines)
   end
   
@@ -334,8 +367,8 @@ defmodule Gexpr.Visualizer do
     extract_branch_helper(rest, acc <> <<char::utf8>>, depth)
   end
 
-  # Sequence ASCII rendering
-  defp render_sequence_ascii(%{value: %{state: state}} = seed, name) do
+  # Sequence ASCII rendering  
+  def render_sequence_ascii(%{value: %{state: state}} = seed, name) do
     IO.puts("🔢 #{name} (Sequence)")
     
     # Show recent sequence values
@@ -377,24 +410,44 @@ defmodule Gexpr.Visualizer do
   end
 
   defp render_sequence_chart(values) do
+    if Enum.empty?(values), do: :ok
+    
     max_val = Enum.max(values)
-    max_height = 8
+    max_height = 10
     
-    # Normalize values to chart height
-    normalized = Enum.map(values, fn val ->
-      round(val / max_val * max_height)
-    end)
-    
-    # Draw chart from top down
-    for height <- max_height..1 do
-      line = Enum.map(normalized, fn val ->
-        if val >= height, do: "█", else: " "
+    # Normalize values to chart height (handle zero max_val)
+    normalized = if max_val == 0 do
+      Enum.map(values, fn _ -> 0 end)
+    else
+      Enum.map(values, fn val ->
+        round(val / max_val * max_height)
       end)
-      IO.puts(Enum.join(line, ""))
     end
     
-    # Show values at bottom
-    IO.puts(Enum.join(Enum.map(values, fn v -> String.pad_leading("#{v}", 1) end), ""))
+    # Show values at top
+    IO.puts("Values: #{Enum.join(values, ", ")}")
+    IO.puts("")
+    
+    # Draw chart from top down with better graphics
+    for height <- max_height..1 do
+      line = Enum.with_index(normalized) |> Enum.map(fn {val, _idx} ->
+        cond do
+          val >= height -> "▓"
+          val == height - 1 -> "░"  # Partial fill for visual smoothness
+          true -> " "
+        end
+      end)
+      IO.puts("│" <> Enum.join(line, "") <> "│")
+    end
+    
+    # Bottom border
+    bottom = "└" <> String.duplicate("─", length(values)) <> "┘"
+    IO.puts(bottom)
+    
+    # Scale indicators
+    if max_val > 0 do
+      IO.puts("Scale: 0 to #{max_val}")
+    end
   end
 
   # Generic ASCII rendering
