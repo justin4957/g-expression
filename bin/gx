@@ -1,0 +1,29 @@
+#!/usr/bin/env elixir
+
+# G-Expression CLI standalone script
+# Usage: ./bin/gx <command> [args...]
+
+# Add the lib directory to the code path so we can load our modules
+project_root = Path.dirname(Path.dirname(__ENV__.file))
+lib_path = Path.join(project_root, "lib")
+Code.prepend_path(lib_path)
+
+# Load dependencies
+Mix.install([
+  {:jason, "~> 1.4"}
+])
+
+# Start the application modules
+defmodule Gexpr.CLI.Runner do
+  def run(args) do
+    # Load our modules
+    Code.require_file(Path.join([lib_path, "gexpr", "expansion.ex"]))
+    Code.require_file(Path.join([lib_path, "gexpr", "cli.ex"]))
+    
+    # Run the CLI
+    Gexpr.CLI.main(args)
+  end
+end
+
+# Run with command line args
+Gexpr.CLI.Runner.run(System.argv())
