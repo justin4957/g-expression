@@ -352,10 +352,10 @@ defmodule Gexpr.CLI do
   end
 
   defp execute_repl_command("demo", env) do
-    IO.puts("🎬 Running killer demo sequence...")
+    IO.puts("🎬 Running showcase demo sequence...")
     IO.puts("")
     
-    # The fractal tree killer demo
+    # The fractal tree showcase demo
     case create_seed("fractal", "{}") do
       {:ok, seed} ->
         store_seed("demo_tree", seed)
@@ -587,7 +587,7 @@ defmodule Gexpr.CLI do
       show <name> [options]           - Display expression
       peek <name> [options]           - Observe expression
       list                            - List all seeds
-      demo                            - Run killer fractal tree demo
+      demo                            - Run showcase fractal tree demo
       catalog                         - Show seed library catalog
       help                            - Show this help
       exit                            - Exit REPL
@@ -596,7 +596,7 @@ defmodule Gexpr.CLI do
       grow <name> --visual            - Real-time ASCII growth animation
       show <name> --visual            - Open browser visualization
       
-    Example Killer Demo:
+    Example Showcase Demo:
       plant fractal fractal
       grow fractal --visual -n 6
     """)

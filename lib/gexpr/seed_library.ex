@@ -237,7 +237,7 @@ defmodule Gexpr.SeedLibrary do
       wow_factor: :very_high,
       demo_iterations: 5,
       artistic_beauty: true,
-      killer_demo: true
+      showcase_demo: true
     })}
   end
 
@@ -535,9 +535,9 @@ defmodule Gexpr.SeedLibrary do
   end
 
   @doc """
-  The killer demo that showcases the most impressive visual growth.
+  The showcase demo that displays the most impressive visual growth.
   """
-  def killer_demo do
+  def showcase_demo do
     create(:fractal_tree, %{
       max_iterations: 6,
       real_time_growth: true,

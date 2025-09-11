@@ -144,7 +144,7 @@ defmodule Gexpr do
   @doc """
   Compiles a G-Expression to JavaScript code.
   
-  This is the killer feature that proves G-Expressions are a universal substrate.
+  This is the breakthrough feature that proves G-Expressions are a universal substrate.
   """
   @spec compile_to_js(PrimeMover.prime_gexpr()) :: {:ok, String.t()} | {:error, String.t()}
   defdelegate compile_to_js(gexpr), to: JsCompiler

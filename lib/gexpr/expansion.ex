@@ -437,7 +437,7 @@ defmodule Gexpr.Expansion do
       })
     }, %{
       visualization: :ascii_tree,
-      demo_quality: :killer
+      demo_quality: :showcase
     })
   end
 
