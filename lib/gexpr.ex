@@ -25,7 +25,7 @@ defmodule Gexpr do
       #=> {:ok, "hello"}
   """
 
-  alias Gexpr.{PrimeMover, Bootstrap, Semantics, MacroLibrary, AiGenerator, Metadata}
+  alias Gexpr.{PrimeMover, Bootstrap, Semantics, MacroLibrary, AiGenerator, Metadata, JsCompiler}
 
   @doc """
   Bootstraps the G-Expression system and returns a complete context.
@@ -138,4 +138,32 @@ defmodule Gexpr do
   """
   @spec ai_guide() :: String.t()
   defdelegate ai_guide(), to: AiGenerator, as: :ai_prompting_guide
+
+  # ===== JAVASCRIPT COMPILATION =====
+
+  @doc """
+  Compiles a G-Expression to JavaScript code.
+  
+  This is the killer feature that proves G-Expressions are a universal substrate.
+  """
+  @spec compile_to_js(PrimeMover.prime_gexpr()) :: {:ok, String.t()} | {:error, String.t()}
+  defdelegate compile_to_js(gexpr), to: JsCompiler
+
+  @doc """
+  Compiles a G-Expression to a complete JavaScript function.
+  """
+  @spec compile_to_js_function(PrimeMover.prime_gexpr(), String.t()) :: {:ok, String.t()} | {:error, String.t()}
+  defdelegate compile_to_js_function(gexpr, function_name \\ "gexpr_func"), to: JsCompiler
+
+  @doc """
+  Compiles a lambda G-Expression to a JavaScript function with parameters.
+  """
+  @spec compile_lambda_to_js_function(PrimeMover.prime_gexpr(), String.t()) :: {:ok, String.t()} | {:error, String.t()}
+  defdelegate compile_lambda_to_js_function(lambda_gexpr, function_name \\ "gexpr_func"), to: JsCompiler
+
+  @doc """
+  End-to-end: compiles G-Expression to JavaScript and runs it with Node.js.
+  """
+  @spec compile_and_run(PrimeMover.prime_gexpr(), String.t()) :: {:ok, String.t()} | {:error, String.t()}
+  defdelegate compile_and_run(gexpr, function_name \\ "gexpr_func"), to: JsCompiler
 end

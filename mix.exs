@@ -25,7 +25,8 @@ defmodule Gexpr.MixProject do
         ],
         groups_for_modules: [
           "Core System": [Gexpr, Gexpr.PrimeMover, Gexpr.Bootstrap],
-          "Advanced Features": [Gexpr.Semantics, Gexpr.MacroLibrary, Gexpr.AiGenerator, Gexpr.Metadata]
+          "Advanced Features": [Gexpr.Semantics, Gexpr.MacroLibrary, Gexpr.AiGenerator, Gexpr.Metadata],
+          "Code Generation": [Gexpr.JsCompiler]
         ]
       ]
     ]
