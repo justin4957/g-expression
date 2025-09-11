@@ -13,7 +13,7 @@ The JavaScript compiler transforms G-Expressions into executable JavaScript code
 3. [Arithmetic and Logic](#arithmetic-and-logic)
 4. [Complex Expressions](#complex-expressions)
 5. [End-to-End Pipeline](#end-to-end-pipeline)
-6. [The Killer Test](#the-killer-test)
+6. [The Factorial Test](#the-factorial-test)
 7. [Practical Applications](#practical-applications)
 8. [Extending to Other Languages](#extending-to-other-languages)
 
@@ -183,7 +183,7 @@ File.write!("/tmp/gexpr_demo.html", html_content)
 IO.puts("Open /tmp/gexpr_demo.html in your browser!")
 ```
 
-## The Killer Test
+## The Factorial Test
 
 This is the test that proves the entire G-Expression vision:
 
