@@ -53,7 +53,19 @@ defmodule Gexpr.CLI do
     case load_seed(name) do
       {:ok, seed} ->
         context = parse_grow_options(options)
-        grow_seed(seed, context, name)
+        
+        if Enum.member?(options, "--visual") do
+          iterations = Map.get(context, :iterations, 5)
+          case Gexpr.Visualizer.grow_visual(seed, name, iterations, %{}) do
+            {:ok, final_seed} ->
+              store_seed(name, final_seed)
+              IO.puts("✓ Visual growth complete!")
+            {:error, reason} ->
+              IO.puts("❌ Visual growth failed: #{reason}")
+          end
+        else
+          grow_seed(seed, context, name)
+        end
 
       {:error, reason} ->
         IO.puts("❌ Error: #{reason}")
@@ -69,8 +81,12 @@ defmodule Gexpr.CLI do
   defp handle_show([name | options]) do
     case load_seed(name) do
       {:ok, seed} ->
-        format = parse_show_format(options)
-        display_seed(seed, format, name)
+        if Enum.member?(options, "--visual") do
+          Gexpr.Visualizer.show_visual(seed, name, %{format: :web})
+        else
+          format = parse_show_format(options)
+          display_seed(seed, format, name)
+        end
 
       {:error, reason} ->
         IO.puts("❌ Error: #{reason}")
@@ -167,12 +183,27 @@ defmodule Gexpr.CLI do
   defp create_seed(generator_type, spec_json) do
     parsed_spec = if spec_json == "", do: %{}, else: parse_json(spec_json)
 
-    case generator_type do
-      "lazy" -> {:ok, Expansion.create_seed(:fibonacci, parsed_spec)}
-      "adaptive" -> {:ok, Expansion.create_seed(:adaptive_sort, parsed_spec)}
-      "lsystem" -> {:ok, Expansion.create_seed(:tree, parsed_spec)}
-      "spec" -> {:ok, Expansion.create_seed(:email_validator, parsed_spec)}
-      _ -> {:error, "Unknown generator type: #{generator_type}"}
+    # Check if it's a library seed first
+    seed_name = parsed_spec[:seed] || parsed_spec["seed"]
+    
+    if seed_name do
+      case Gexpr.SeedLibrary.create(String.to_atom(seed_name), parsed_spec) do
+        {:ok, seed} -> {:ok, seed}
+        {:error, reason} -> {:error, reason}
+      end
+    else
+      # Fall back to basic generator types
+      case generator_type do
+        "lazy" -> {:ok, Expansion.create_seed(:fibonacci, parsed_spec)}
+        "adaptive" -> {:ok, Expansion.create_seed(:adaptive_sort, parsed_spec)}
+        "lsystem" -> {:ok, Expansion.create_seed(:tree, parsed_spec)}
+        "fractal" -> {:ok, Expansion.create_seed(:fractal_tree, parsed_spec)}
+        "primes" -> {:ok, Expansion.create_seed(:primes, parsed_spec)}
+        "collatz" -> {:ok, Expansion.create_seed(:collatz, parsed_spec)}
+        "pi" -> {:ok, Expansion.create_seed(:pi, parsed_spec)}
+        "spec" -> {:ok, Expansion.create_seed(:email_validator, parsed_spec)}
+        _ -> {:error, "Unknown generator type: #{generator_type}. Try: lazy, adaptive, lsystem, fractal, primes, collatz, pi, spec"}
+      end
     end
   end
 
@@ -317,6 +348,48 @@ defmodule Gexpr.CLI do
         IO.puts("No seeds planted")
     end
 
+    env
+  end
+
+  defp execute_repl_command("demo", env) do
+    IO.puts("🎬 Running killer demo sequence...")
+    IO.puts("")
+    
+    # The fractal tree killer demo
+    case create_seed("fractal", "{}") do
+      {:ok, seed} ->
+        store_seed("demo_tree", seed)
+        case Gexpr.Visualizer.grow_visual(seed, "demo_tree", 5, %{}) do
+          {:ok, final_seed} ->
+            store_seed("demo_tree", final_seed)
+            IO.puts("")
+            IO.puts("🎉 Demo complete! Try 'show demo_tree --visual' for browser view")
+          {:error, reason} ->
+            IO.puts("Demo failed: #{reason}")
+        end
+      {:error, reason} ->
+        IO.puts("Demo setup failed: #{reason}")
+    end
+    
+    env
+  end
+
+  defp execute_repl_command("catalog", env) do
+    catalog = Gexpr.SeedLibrary.catalog()
+    
+    IO.puts("📚 Seed Library Catalog")
+    IO.puts("=======================")
+    
+    Enum.each(catalog, fn {category, seeds} ->
+      IO.puts("\n#{String.upcase(to_string(category))} GENERATORS:")
+      Enum.each(seeds, fn {name, description} ->
+        IO.puts("  #{name} - #{description}")
+      end)
+    end)
+    
+    IO.puts("\nUsage: plant <name> <generator> '{\"seed\": \"<seed_name>\"}'")
+    IO.puts("Example: plant cool fractal '{\"seed\": \"fractal_tree\"}'")
+    
     env
   end
 
@@ -514,8 +587,18 @@ defmodule Gexpr.CLI do
       show <name> [options]           - Display expression
       peek <name> [options]           - Observe expression
       list                            - List all seeds
+      demo                            - Run killer fractal tree demo
+      catalog                         - Show seed library catalog
       help                            - Show this help
       exit                            - Exit REPL
+      
+    Visual Options:
+      grow <name> --visual            - Real-time ASCII growth animation
+      show <name> --visual            - Open browser visualization
+      
+    Example Killer Demo:
+      plant fractal fractal
+      grow fractal --visual -n 6
     """)
   end
 end

@@ -178,7 +178,9 @@ defmodule Gexpr.Expansion do
 
   # L-System expansion for recursive structures
   defp expand_lsystem(%{value: %{axiom: current, rules: rules}} = expr, _ctx) do
-    if expr.expansion_state.iterations >= Map.get(expr.meta, :max_iterations, 5) do
+    max_iterations = Map.get(expr.meta, :max_iterations, 8)
+    
+    if expr.expansion_state.iterations >= max_iterations do
       {:ok, expr}
     else
       expanded_string = expand_lsystem_string(current, rules)
@@ -243,8 +245,46 @@ defmodule Gexpr.Expansion do
     {:ok, [current + step, step], current}
   end
 
+  def apply_lazy_rule("sieve_primes", [current, sieve]) do
+    next_prime = next_prime_number(current + 1, sieve)
+    new_sieve = add_to_sieve(next_prime, sieve)
+    {:ok, [next_prime, new_sieve], next_prime}
+  end
+
+  def apply_lazy_rule("collatz", [n, step_count]) do
+    next_n = if rem(n, 2) == 0, do: div(n, 2), else: 3 * n + 1
+    {:ok, [next_n, step_count + 1], next_n}
+  end
+
+  def apply_lazy_rule("pi_leibniz", [approximation, term, iteration]) do
+    # π/4 = 1 - 1/3 + 1/5 - 1/7 + ...
+    sign = if rem(iteration, 2) == 0, do: 1, else: -1
+    term_value = sign / (2 * iteration + 1)
+    new_approximation = approximation + term_value
+    pi_estimate = new_approximation * 4
+    {:ok, [pi_estimate, term_value, iteration + 1], pi_estimate}
+  end
+
   def apply_lazy_rule(rule, _state) do
     {:error, "Unknown lazy rule: #{rule}"}
+  end
+
+  # Helper functions for prime sieve
+  defp next_prime_number(n, sieve) when n < 2, do: 2
+  defp next_prime_number(n, sieve) do
+    if is_prime?(n, sieve) do
+      n
+    else
+      next_prime_number(n + 1, sieve)
+    end
+  end
+
+  defp is_prime?(n, sieve) do
+    not Enum.any?(sieve, fn p -> rem(n, p) == 0 end)
+  end
+
+  defp add_to_sieve(prime, sieve) do
+    [prime | sieve] |> Enum.take(100)  # Keep sieve manageable
   end
 
   defp evaluate_adaptive_hint(hint, world_model) do
@@ -351,6 +391,28 @@ defmodule Gexpr.Expansion do
     })
   end
 
+  def create_seed(:primes, _spec) do
+    create_expandable(:lazy, %{
+      rule: "sieve_primes", 
+      state: [2, []]
+    })
+  end
+
+  def create_seed(:collatz, spec) do
+    start = Map.get(spec, :start, 27)
+    create_expandable(:lazy, %{
+      rule: "collatz",
+      state: [start, 0]
+    })
+  end
+
+  def create_seed(:pi, _spec) do
+    create_expandable(:lazy, %{
+      rule: "pi_leibniz",
+      state: [1.0, 1.0, 0]  # Start with π/4 ≈ 1
+    })
+  end
+
   def create_seed(:adaptive_sort, spec) do
     create_expandable(:adaptive, %{
       strategy: "size_based",
@@ -363,6 +425,19 @@ defmodule Gexpr.Expansion do
     create_expandable(:lsystem, %{
       axiom: Map.get(spec, :axiom, "A"),
       rules: Map.get(spec, :rules, %{"A" => "B[+A][-A]", "B" => "BB"})
+    })
+  end
+
+  def create_seed(:fractal_tree, spec) do
+    create_expandable(:lsystem, %{
+      axiom: Map.get(spec, :axiom, "A"),
+      rules: Map.get(spec, :rules, %{
+        "A" => "B[+A][-A]BA",
+        "B" => "BB"
+      })
+    }, %{
+      visualization: :ascii_tree,
+      demo_quality: :killer
     })
   end
 
