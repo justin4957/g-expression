@@ -51,101 +51,9 @@ Gexpr.eval(cons_expr, context)
 #=> {:ok, {:list, [1, 2]}}
 ```
 
-### Building Complex Expressions
-
-```elixir
-# Using helper functions for cleaner syntax
-import Gexpr
-
-# Create a conditional expression
-condition = app(ref("eq?"), vec([lit(1), lit(1)]))
-then_branch = lit("equal")
-else_branch = lit("not equal")
-
-conditional = app(ref("cond"), vec([condition, then_branch, else_branch]))
-
-{:ok, context} = bootstrap()
-eval(conditional, context)
-#=> {:ok, "equal"}
-```
-
-## Architecture
-
-### Prime Mover (`Gexpr.PrimeMover`)
-
-The foundational interpreter that defines:
-- Basic evaluation rules for the four G-Expression types
-- Primitive operations needed for self-hosting
-- Context management for bindings
-
-### Bootstrap (`Gexpr.Bootstrap`)
-
-Manages the system initialization:
-- Loads Genesis Context definitions
-- Applies Prime Mover to build complete system
-- Handles graceful fallbacks for missing configuration
-
-### Genesis Context
-
-Foundational definitions stored as data in `priv/genesis_context.exs`:
-- Lambda abstraction
-- Conditional logic (`if` in terms of `cond`)
-- Basic list operations
-- Simplified evaluator (bootstrapping towards self-hosting)
-
-## Installation
-
-Add `gexpr` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:gexpr, "~> 0.1.0"}
-  ]
-end
-```
-
-## Development
-
-```bash
-# Get dependencies
-mix deps.get
-
-# Run tests
-mix test
-
-# Generate documentation
-mix docs
-
-# Start interactive session
-iex -S mix
-```
-
-## Testing
-
-The project includes comprehensive tests covering:
-- Prime Mover evaluation rules
-- Bootstrap process
-- Genesis Context loading
-- Integration scenarios
-
-Run tests with:
-
-```bash
-mix test
-```
-
-## Documentation
-
-Generate documentation with:
-
-```bash
-mix docs
-```
 
 ## The Practical Utility of G-Expressions
 
-This isn't just theoretical elegance - G-Expressions could fundamentally change how we build, reason about, and evolve software. Here are the concrete benefits:
 
 ### 1. **AI-Native Code Generation**
 
@@ -434,9 +342,6 @@ The system could:
 4. Replace its own implementation
 5. All while running
 
-This isn't just optimization - it's evolution. Software that gets better at getting better.
-
----
 
 The core insight: **G-Expressions aren't just a better syntax - they're a computational substrate that makes previously impossible things tractable.** They're the difference between software as static artifacts and software as living, evolving processes.
 
