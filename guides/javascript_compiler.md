@@ -1,6 +1,6 @@
 # G-Expression to JavaScript Compiler
 
-This guide demonstrates the **killer feature** that proves G-Expressions work as a universal computational substrate: compiling G-Expressions to JavaScript and executing them with Node.js.
+This guide demonstrates the useful feature that proves G-Expressions work as a universal computational substrate: compiling G-Expressions to JavaScript and executing them with Node.js.
 
 ## Overview
 
