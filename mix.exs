@@ -15,9 +15,17 @@ defmodule Gexpr.MixProject do
       source_url: "https://github.com/user/gexpr",
       docs: [
         main: "Gexpr",
-        extras: ["README.md"],
+        extras: [
+          "README.md",
+          "guides/getting_started.md",
+          "guides/advanced_examples.md"
+        ],
+        groups_for_extras: [
+          "Guides": ~r/guides\/.?/
+        ],
         groups_for_modules: [
-          "Core System": [Gexpr, Gexpr.PrimeMover, Gexpr.Bootstrap]
+          "Core System": [Gexpr, Gexpr.PrimeMover, Gexpr.Bootstrap],
+          "Advanced Features": [Gexpr.Semantics, Gexpr.MacroLibrary, Gexpr.AiGenerator, Gexpr.Metadata]
         ]
       ]
     ]
