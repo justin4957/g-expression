@@ -15,12 +15,17 @@ This guide showcases advanced uses of the G-Expression system, demonstrating its
 
 ## Recursive Algorithms
 
+**🧠 PHILOSOPHICAL SIGNIFICANCE:** These examples demonstrate how infinite recursive definitions become finite through the Y-combinator, solving the fundamental paradox of self-reference in computation.
+
 ### Fibonacci with Y-Combinator
+
+**🧠 COMPUTATIONAL ARCHAEOLOGY:** This shows the mathematical DNA of recursion - how infinite sequences emerge from finite descriptions through fixed-point theory.
 
 ```elixir
 {:ok, context} = Gexpr.bootstrap()
 
 # fib = fix(λf.λn. if n <= 1 then n else f(n-1) + f(n-2))
+# MATHEMATICAL BEAUTY: Infinite recursion from finite definition
 fib_body = {:lam, %{
   params: ["n"],
   body: {:match, {:app, {:ref, "<="}, {:vec, [{:ref, "n"}, {:lit, 1}]}}, [
@@ -33,9 +38,9 @@ fib_body = {:lam, %{
 }}
 
 fib_generator = {:lam, %{params: ["f"], body: fib_body}}
-fibonacci = {:fix, fib_generator}
+fibonacci = {:fix, fib_generator}  # FIXED-POINT MAGIC: Y-combinator solution
 
-# Test fibonacci sequence
+# Test fibonacci sequence - EMERGENT MATHEMATICS
 for n <- 0..6 do
   fib_n = {:app, fibonacci, {:vec, [{:lit, n}]}}
   {:ok, result} = Gexpr.eval(fib_n, context)
@@ -52,23 +57,26 @@ end
 
 ### List Processing with Recursion
 
+**🧠 STRUCTURAL RECURSION:** This demonstrates how data structure traversal becomes computation - the shape of data determines the shape of the algorithm, showing the deep connection between form and function.
+
 ```elixir
 # sum_list = fix(λf.λlist. if empty?(list) then 0 else car(list) + f(cdr(list)))
+# STRUCTURAL INDUCTION: Algorithm follows data structure
 sum_list_body = {:lam, %{
   params: ["list"],
   body: {:match, {:app, {:ref, "eq?"}, {:vec, [{:ref, "list"}, {:lit, {:list, []}}]}}, [
-    {{:lit_pattern, true}, {:lit, 0}},
+    {{:lit_pattern, true}, {:lit, 0}},  # BASE CASE: Empty structure
     {:else_pattern, {:app, {:ref, "+"}, {:vec, [
-      {:app, {:ref, "car"}, {:vec, [{:ref, "list"}]}},
-      {:app, {:ref, "f"}, {:vec, [{:app, {:ref, "cdr"}, {:vec, [{:ref, "list"}]}}]}}
+      {:app, {:ref, "car"}, {:vec, [{:ref, "list"}]}},  # DECONSTRUCTION
+      {:app, {:ref, "f"}, {:vec, [{:app, {:ref, "cdr"}, {:vec, [{:ref, "list"}]}}]}}  # RECURSION
     ]}}}
   ]}
 }}
 
 sum_generator = {:lam, %{params: ["f"], body: sum_list_body}}
-sum_list = {:fix, sum_generator}
+sum_list = {:fix, sum_generator}  # MATHEMATICAL INDUCTION AS COMPUTATION
 
-# Test with a list [1, 2, 3, 4, 5]
+# Test with a list [1, 2, 3, 4, 5] - DATA DRIVES COMPUTATION
 test_list = {:list, [1, 2, 3, 4, 5]}
 sum_expr = {:app, sum_list, {:vec, [test_list]}}
 {:ok, result} = Gexpr.eval(sum_expr, context)
@@ -77,19 +85,24 @@ IO.puts("Sum of [1,2,3,4,5] = #{result}")  # 15
 
 ## Higher-Order Functions
 
+**🧠 PHILOSOPHICAL SIGNIFICANCE:** Higher-order functions prove that functions are first-class mathematical objects - demonstrating the unity between data and computation that enables self-modifying and self-reasoning systems.
+
 ### Function Composition Chain
+
+**🧠 COMPOSITIONAL REASONING:** This shows how complex transformations emerge from simple function composition - the mathematical foundation of modular programming and separation of concerns.
 
 ```elixir
 {:ok, macro_context} = Gexpr.bootstrap_with_macros()
 
 # Create a chain: compose(inc, compose(square, inc))
-# This computes: inc(square(inc(x)))
+# This computes: inc(square(inc(x))) - COMPOSITIONAL SEMANTICS
 compose_chain = {:app, {:ref, "compose"}, {:vec, [
-  {:ref, "inc"},
-  {:app, {:ref, "compose"}, {:vec, [{:ref, "square"}, {:ref, "inc"}]}}
+  {:ref, "inc"},  # OUTER TRANSFORMATION
+  {:app, {:ref, "compose"}, {:vec, [{:ref, "square"}, {:ref, "inc"}]}}  # INNER PIPELINE
 ]}}
 
 # Apply to 5: inc(square(inc(5))) = inc(square(6)) = inc(36) = 37
+# TRANSFORMATION CHAIN: 5 → 6 → 36 → 37
 chain_expr = {:app, compose_chain, {:vec, [{:lit, 5}]}}
 {:ok, result} = Gexpr.eval(chain_expr, macro_context)
 IO.puts("inc(square(inc(5))) = #{result}")  # 37

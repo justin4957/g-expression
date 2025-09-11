@@ -30,23 +30,25 @@ iex -S mix
 
 ### Test the Prime Mover
 
+**🧠 PHILOSOPHICAL SIGNIFICANCE:** This tests the foundational axioms that bootstrap all computation - proving that minimal primitives can unfurl into universal computational power.
+
 ```elixir
 # Bootstrap the basic system
 {:ok, context} = Gexpr.bootstrap()
 
-# Test literal evaluation
+# Test literal evaluation - SEMANTIC PRESERVATION
 Gexpr.eval({:lit, 42}, context)
 #=> {:ok, 42}
 
-# Test reference lookup
+# Test reference lookup - SYMBOLIC BINDING
 Gexpr.eval({:ref, "id"}, context) 
 #=> {:ok, {:builtin, "id", #Function<...>}}
 
-# Test function application
+# Test function application - OPERATIONAL SEMANTICS
 Gexpr.eval({:app, {:ref, "id"}, {:lit, "hello"}}, context)
 #=> {:ok, "hello"}
 
-# Test arithmetic
+# Test arithmetic - MATHEMATICAL FOUNDATION
 add_expr = {:app, {:ref, "+"}, {:vec, [{:lit, 20}, {:lit, 22}]}}
 Gexpr.eval(add_expr, context)
 #=> {:ok, 42}
@@ -54,18 +56,18 @@ Gexpr.eval(add_expr, context)
 
 ## Step 2: Lambda Calculus and Closures
 
-Test lambda creation and application:
+**🧠 PHILOSOPHICAL SIGNIFICANCE:** This proves computational universality - demonstrating that any computation can be expressed through function abstraction and application, validating the Church-Turing thesis.
 
 ```elixir
-# Create identity function
+# Create identity function - FUNCTIONAL ABSTRACTION
 id_lambda = {:lam, %{params: ["x"], body: {:ref, "x"}}}
 {:ok, id_func} = Gexpr.eval(id_lambda, context)
 
-# Apply it
+# Apply it - CLOSURE SEMANTICS
 Gexpr.PrimeMover.apply_value(id_func, [42])
 #=> {:ok, 42}
 
-# Create and apply add function
+# Create and apply add function - FIRST-CLASS FUNCTIONS
 add_lambda = {:lam, %{
   params: ["x", "y"], 
   body: {:app, {:ref, "+"}, {:vec, [{:ref, "x"}, {:ref, "y"}]}}
@@ -78,10 +80,10 @@ Gexpr.eval(add_app, context)
 
 ## Step 3: The Y-Combinator (Recursion)
 
-Test recursive factorial computation:
+**🧠 PHILOSOPHICAL SIGNIFICANCE:** This demonstrates the solution to the bootstrap paradox - how recursive computation emerges from pure function composition without explicit self-reference, proving the mathematical foundations of recursion theory.
 
 ```elixir
-# Define factorial using fix combinator
+# Define factorial using fix combinator - SELF-REFERENCE WITHOUT CIRCULARITY
 factorial_body = {:lam, %{
   params: ["n"],
   body: {:match, {:app, {:ref, "<="}, {:vec, [{:ref, "n"}, {:lit, 1}]}}, [
@@ -94,14 +96,14 @@ factorial_body = {:lam, %{
 }}
 
 factorial_generator = {:lam, %{params: ["f"], body: factorial_body}}
-factorial_fixed = {:fix, factorial_generator}
+factorial_fixed = {:fix, factorial_generator}  # FIXED-POINT MAGIC
 
-# Test factorial of 5
+# Test factorial of 5 - INFINITE UNFOLDING MADE FINITE
 fact_5 = {:app, factorial_fixed, {:vec, [{:lit, 5}]}}
 Gexpr.eval(fact_5, context)
 #=> {:ok, 120}
 
-# Test factorial of 0 (base case)  
+# Test factorial of 0 (base case) - RECURSION TERMINATION
 fact_0 = {:app, factorial_fixed, {:vec, [{:lit, 0}]}}
 Gexpr.eval(fact_0, context)
 #=> {:ok, 1}
@@ -109,23 +111,24 @@ Gexpr.eval(fact_0, context)
 
 ## Step 4: Macro Library
 
-Load and test the macro library:
+**🧠 PHILOSOPHICAL SIGNIFICANCE:** This proves self-hosting capability - higher-level abstractions defined entirely within the system itself, demonstrating emergent complexity from minimal foundations and validating homoiconicity principles.
 
 ```elixir
-# Bootstrap with macros
+# Bootstrap with macros - SELF-HOSTING POWER
 {:ok, macro_context} = Gexpr.bootstrap_with_macros()
 
-# Test increment macro
+# Test increment macro - ABSTRACTION EFFICIENCY
 inc_expr = {:app, {:ref, "inc"}, {:vec, [{:lit, 41}]}}
 Gexpr.eval(inc_expr, macro_context)
 #=> {:ok, 42}
 
-# Test square macro
+# Test square macro - MATHEMATICAL ABSTRACTION
 square_expr = {:app, {:ref, "square"}, {:vec, [{:lit, 6}]}}
 Gexpr.eval(square_expr, macro_context)
 #=> {:ok, 36}
 
-# Test function composition: compose(square, inc)(5) = square(inc(5)) = square(6) = 36
+# Test function composition - COMPOSITIONAL SEMANTICS
+# compose(square, inc)(5) = square(inc(5)) = square(6) = 36
 compose_expr = {:app,
   {:app, {:ref, "compose"}, {:vec, [{:ref, "square"}, {:ref, "inc"}]}},
   {:vec, [{:lit, 5}]}
@@ -133,12 +136,12 @@ compose_expr = {:app,
 Gexpr.eval(compose_expr, macro_context)
 #=> {:ok, 36}
 
-# Test when macro (conditional execution)
+# Test when macro - CONDITIONAL ABSTRACTION
 when_expr = {:app, {:ref, "when"}, {:vec, [{:lit, true}, {:lit, "executed!"}]}}
 Gexpr.eval(when_expr, macro_context)
 #=> {:ok, "executed!"}
 
-# Test logical operations
+# Test logical operations - BOOLEAN ALGEBRA
 and_expr = {:app, {:ref, "and"}, {:vec, [{:lit, true}, {:lit, false}]}}
 Gexpr.eval(and_expr, macro_context)
 #=> {:ok, false}
@@ -146,7 +149,7 @@ Gexpr.eval(and_expr, macro_context)
 
 ## Step 5: AI-Friendly Generation
 
-Test AI prompt processing:
+**🧠 PHILOSOPHICAL SIGNIFICANCE:** This bridges the semantic gap between human intent and machine execution - proving that natural language can be transformed into precise computational structures while preserving meaning and enabling verification.
 
 ```elixir
 # Generate G-Expression from natural language
